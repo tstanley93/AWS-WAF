@@ -303,7 +303,7 @@
             "AWS::CloudFormation::Init" : {
                 "config" : {
                     "files" : {
-                        "/root/firstrun.sh"    : {
+                        "/root/firstrun.sh" : {
                             "content" : { "Fn::Join" : [ "", [
                             "#!/bin/bash\n",
                             ". /root/firstrun.config\n",

@@ -15,12 +15,12 @@
     <CloudFormationPath Condition=" '$(CloudFormationPath)' == '' AND Exists('$(MSBuildExtensionsPath)\Amazon Web Services LLC\AWSToolkit.VS2010\cloudformation.targets')">$(MSBuildExtensionsPath)\Amazon Web Services LLC\AWSToolkit.VS2010</CloudFormationPath>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="cloudformation.json">
+    <Compile Include="cloudformation.template">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="BigIPBYOLCFT.json">
+    <Content Include="BigIPBYOLCFT.template">
       <SubType>Content</SubType>
     </Content>
     <Content Include="BigIPBYOLCFT_v2.json">

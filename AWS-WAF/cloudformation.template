@@ -1,0 +1,276 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+
+  "Description": "AWS Cloud Formation Template for creating and initiating the formation of a F5 WAF Cluster.",
+
+  "Parameters": {
+    "KeyName": {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "255",
+      "AllowedPattern": "[\\x20-\\x7E]*",
+      "ConstraintDescription": "can contain only ASCII characters.",
+      "Default": "tstanley933"
+    },
+    "SSHLocation": {
+      "Description": " The IP address range that can be used to SSH to the EC2 instances",
+      "Type": "String",
+      "MinLength": "9",
+      "MaxLength": "18",
+      "Default": "0.0.0.0/0",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+    },
+    "licenseToken1": {
+      "Description": "(Required) The License Token for the first BYOL F5 Web Application Firewall.",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "255",
+      "AllowedPattern": "([\\x41-\\x5A][\\x41-\\x5A|\\x30-\\x39]{4})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{7})",
+      "ConstraintDescription": "Please verify your F5 BYOL regkey."
+    },
+    "licenseToken2": {
+      "Description": "(Optional) The License Token for the second BYOL F5 Web Application Firewall if applicable.",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "255",
+      "AllowedPattern": "([\\x41-\\x5A][\\x41-\\x5A|\\x30-\\x39]{4})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{7})",
+      "ConstraintDescription": "Please verify your F5 BYOL regkey."
+    },
+    "licenseToken3": {
+      "Description": "(Optional) The License Token for the third BYOL F5 Web Application Firewall if applicable.",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "255",
+      "AllowedPattern": "([\\x41-\\x5A][\\x41-\\x5A|\\x30-\\x39]{4})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{7})",
+      "ConstraintDescription": "Please verify your F5 BYOL regkey."
+    },
+    "licenseToken4": {
+      "Description": "(Optional) The License Token for the fourth BYOL F5 Web Application Firewall if applicablbe.",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "255",
+      "AllowedPattern": "([\\x41-\\x5A][\\x41-\\x5A|\\x30-\\x39]{4})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{7})",
+      "ConstraintDescription": "Please verify your F5 BYOL regkey."
+    },
+    "BigIPInstanceType": {
+      "Description": "F5 BIG-IP Virtual Instance Type",
+      "Type": "String",
+      "Default": "m3.xlarge",
+      "AllowedValues": [ "m3.xlarge", "m3.2xlarge", "c1.medium", "c1.xlarge", "cc1.4xlarge", "cc2.8xlarge", "cg1.4xlarge" ],
+      "ConstraintDescription": "must be a valid Big-IP EC2 instance type."
+    },
+    "numberOFWAFs": {
+      "Description": "The number of Web Applicatin Firewall's (Up to 4) that will be deployed infront of your application.",
+      "Type": "String",
+      "Default": "2",
+      "AllowedValues": [ "1", "2", "3", "4" ],
+      "ConstraintDescription": "Must be a valid number between 1 and 4."
+    },
+    "applicationName": {
+      "Description": "Please provide a simple name for your application.",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "255",
+      "Default": "myAppName"
+    },
+    "applicationProtocols": {
+      "Description": "A semi-colon separated list of protocols (http;https) that will be used to configure the WAF's VIP's, (e.g. http for port 80 and https for SSL).",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "255",
+      "Default": "http;https"
+    },
+    "applicationAddress": {
+      "Description": "The public IP address of the Application that this WAF is for.",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "255",
+      "Default": "1.2.3.4"
+    },
+    "applicationPorts": {
+      "Description": "A semi-colon separated list of ports, (80;443) that your applicaiton is listening on, (e.g. 80 and 443).",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "255",
+      "Default": "80;443"
+    },
+    "applicationType": {
+      "Description": "Is your application running on a Linux OS or a Windows OS?",
+      "Type": "String",
+      "Default": "Linux",
+      "AllowedValues": [ "Linux", "Windows" ]
+    },
+    "blockingLevel": {
+      "Description": "Please select how aggressive you would like the blocking level of this WAF to be.  Remember that the more aggressive the blocking level, the more potential there is for false-positives that the WAF might detect.",
+      "Type": "String",
+      "Default": "Medium",
+      "AllowedValues": [ "High", "Medium", "Low" ]
+    },
+    "applicationFQDN": {
+      "Description": "The Fully Qualified Domain Name of your application. (e.g. www.example.com).",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "255",
+      "Default": "www.contoso.com"
+    },
+    "applicationCertificate": {
+      "Description": "The path to the SSL certificate file. (Optional)",
+      "Type": "String",
+      "Default": ""
+    },
+    "applicationKey": {
+      "Description": "The path to the SSL key file. (Optional)",
+      "Type": "String",
+      "Default": ""
+    },
+    "applicationChain": {
+      "Description": "The path to the SSL chain file. (Optional)",
+      "Type": "String",
+      "Default": ""
+    },
+    "VpcId": {
+      "Description": "ID of the existing Vpc that the Application is contained in.",
+      "Type": "String",
+      "Default": "vpc-42c37627"
+    },
+    "Subnet1": {
+      "Description": "ID of the existing subnet that the application servers are installed on.",
+      "Type": "String",
+      "Default": "subnet-34238143"
+    }
+  },
+
+  "Mappings": {
+    "BigIPRegionMap": {
+      "us-east-1": {
+        "Best": "ami-eb421d8e"
+      },
+      "us-west-1": {
+        "Best": "ami-e2d735d1"
+      },
+      "us-west-2": {
+        "Best": "ami-a70bc8e3"
+      },
+      "eu-west-1": {
+        "Best": "ami-3798a740"
+      },
+      "eu-central-1": {
+        "Best": "ami-5e8c8043"
+      },
+      "sa-east-1": {
+        "Best": "ami-a3952dcf"
+      },
+      "ap-southeast-1": {
+        "Best": "ami-3c9a896e"
+      },
+      "ap-southeast-2": {
+        "Best": "ami-bfd69c85"
+      },
+      "ap-northeast-1": {
+        "Best": "ami-bcf69bbc"
+      }
+    }
+  },
+
+  "Resources": {
+    "BIGIPINSTANCE": {
+      "Type": "AWS::EC2::Instance",
+      "Metadata": {
+        "AWS::CloudFormation::Init": {
+          "config": {
+            "files": {
+              "/config/azuresecurity.sh": {
+                "source": "https://raw.githubusercontent.com/tstanley93/Azure-WAF/WAF-Solution/azuresecurity.sh",
+                "mode": "000755",
+                "owner": "root",
+                "group": "root"
+              },
+              "/config/start.sh": {
+                "source": "https://raw.githubusercontent.com/tstanley93/Azure-WAF/WAF-Solution/start.sh",
+                "mode": "000755",
+                "owner": "root",
+                "group": "root"
+              }
+            },
+            "commands": {
+              "start": {
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "/config/start.sh ",
+                      "true;",
+                      { "Ref": "applicationName" },
+                      "WAF0;",
+                      { "Fn::GetAtt": ["BIGIPINSTANCE", "PrivateIp"] },
+                      ";adminpassword",
+                      { "Ref": "licenseToken1" },
+                      ";",
+                      { "Ref": "applicationName" },
+                      " 880;8444 ",
+                      { "Ref": "applicationProtocols" },
+                      " ",
+                      { "Ref": "applicationAddress" },
+                      ";aws ",
+                      { "Ref": "applicationPorts" },
+                      " ",
+                      { "Ref": "applicationType" },
+                      ";",
+                      { "Ref": "blockingLevel" },
+                      ";",
+                      { "Ref": "applicationFQDN" },
+                      ";",
+                      { "Ref": "applicationCertificate" },
+                      ";",
+                      { "Ref": "applicationKey" },
+                      ";",
+                      { "Ref": "applicationChain" },
+                      "\n"
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "ImageId": {
+          "Fn::FindInMap": [
+            "BigIPRegionMap",
+            { "Ref": "AWS::Region" },
+            "Best"
+          ]
+        },
+        "InstanceType": { "Ref": "BigIPInstanceType" },
+        "KeyName": { "Ref": "KeyName" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "F5 WAF Solution"
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash\n",
+                "/opt/aws/apitools/cfn-init-1.4-0.amzn1/bin/cfn-init -v -s ",
+                { "Ref": "AWS::StackId" },
+                " -r BIGIPINSTANCE --region ",
+                { "Ref": "AWS::Region" },
+                "\n"
+              ]
+            ]
+          }
+        }
+      }
+    }
+  },
+
+  "Outputs": {
+  }
+}
