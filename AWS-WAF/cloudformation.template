@@ -24,6 +24,9 @@
           }
         ],
       "ParameterLabels" : {
+          "VpcId" : { "default" : "Please choose which VPC this F5 WAF Cluster should be connected to." },
+          "Subnet1" : { "default" : "Please choose which Subnet this F5 WAF Cluster should be connected to." },
+          "KeyName" : { "default" : "Please choose which KeyName should be used for access to this F5 WAF Cluster." }
         }
     }
   },
