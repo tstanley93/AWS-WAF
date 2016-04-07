@@ -3,15 +3,35 @@
 
   "Description": "AWS Cloud Formation Template for creating and initiating the formation of a F5 WAF Cluster.",
 
+  "Metadata" : {
+    "AWS::CloudFormation::Interface" : {
+      "ParameterGroups" : [
+          {
+            "Label" : { "default" : "Infrastructure Settings"},
+            "Parameters" : [ "adminPassword", "SSHLocation", "numberOFWAFs", "BigIPInstanceType", "KeyName", "VpcId", "Subnet1"]
+          },
+          {
+            "Label" : { "default" : "F5 WAF Config"},
+            "Parameters" : [ "licenseToken1", "licenseToken2", "licenseToken3", "licenseToken4"]
+          },
+          {
+            "Label" : { "default" : "Application Settings"},
+            "Parameters" : [ "applicationName", "applicationProtocols", "applicationAddress", "applicationPorts", "applicationType", "applicationFQDN"]
+          },
+          {
+            "Label" : { "default" : "Security Settings"},
+            "Parameters" : [ "blockingLevel", "applicationCertificate", "applicationKey", "applicationChain"]
+          }
+        ],
+      "ParameterLabels" : {
+        }
+    }
+  },
+
   "Parameters": {
     "KeyName": {
       "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
-      "Type": "String",
-      "MinLength": "1",
-      "MaxLength": "255",
-      "AllowedPattern": "[\\x20-\\x7E]*",
-      "ConstraintDescription": "can contain only ASCII characters.",
-      "Default": "tstanley933"
+      "Type": "AWS::EC2::KeyPair::KeyName"
     },
     "SSHLocation": {
       "Description": " The IP address range that can be used to SSH to the EC2 instances",
@@ -21,6 +41,11 @@
       "Default": "0.0.0.0/0",
       "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
       "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+    },
+    "adminPassword": {
+      "Description": "The password you will use to login to the BIG-IP User Interface with.",
+      "Type": "String",
+      "NoEcho": "true"
     },
     "licenseToken1": {
       "Description": "(Required) The License Token for the first BYOL F5 Web Application Firewall.",
@@ -32,27 +57,15 @@
     },
     "licenseToken2": {
       "Description": "(Optional) The License Token for the second BYOL F5 Web Application Firewall if applicable.",
-      "Type": "String",
-      "MinLength": "1",
-      "MaxLength": "255",
-      "AllowedPattern": "([\\x41-\\x5A][\\x41-\\x5A|\\x30-\\x39]{4})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{7})",
-      "ConstraintDescription": "Please verify your F5 BYOL regkey."
+      "Type": "String"
     },
     "licenseToken3": {
       "Description": "(Optional) The License Token for the third BYOL F5 Web Application Firewall if applicable.",
-      "Type": "String",
-      "MinLength": "1",
-      "MaxLength": "255",
-      "AllowedPattern": "([\\x41-\\x5A][\\x41-\\x5A|\\x30-\\x39]{4})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{7})",
-      "ConstraintDescription": "Please verify your F5 BYOL regkey."
+      "Type": "String"
     },
     "licenseToken4": {
       "Description": "(Optional) The License Token for the fourth BYOL F5 Web Application Firewall if applicablbe.",
-      "Type": "String",
-      "MinLength": "1",
-      "MaxLength": "255",
-      "AllowedPattern": "([\\x41-\\x5A][\\x41-\\x5A|\\x30-\\x39]{4})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{7})",
-      "ConstraintDescription": "Please verify your F5 BYOL regkey."
+      "Type": "String"
     },
     "BigIPInstanceType": {
       "Description": "F5 BIG-IP Virtual Instance Type",
@@ -132,13 +145,11 @@
     },
     "VpcId": {
       "Description": "ID of the existing Vpc that the Application is contained in.",
-      "Type": "String",
-      "Default": "vpc-42c37627"
+      "Type": "List<AWS::EC2::VPC::Id>"
     },
     "Subnet1": {
       "Description": "ID of the existing subnet that the application servers are installed on.",
-      "Type": "String",
-      "Default": "subnet-34238143"
+      "Type": "List<AWS::EC2::Subnet::Id>"
     }
   },
 
@@ -148,10 +159,10 @@
         "Best": "ami-eb421d8e"
       },
       "us-west-1": {
-        "Best": "ami-e2d735d1"
+        "Best": "ami-a70bc8e3"
       },
       "us-west-2": {
-        "Best": "ami-a70bc8e3"
+        "Best": "ami-e2d735d1"
       },
       "eu-west-1": {
         "Best": "ami-3798a740"
@@ -175,6 +186,47 @@
   },
 
   "Resources": {
+    "InstanceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": { "Ref": "VpcId" },
+        "GroupDescription": "Enable SSH HTTP and HTTPS access to this instance",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": { "Ref": "SSHLocation" }
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "443",
+            "ToPort": "443",
+            "CidrIp": "0.0.0.0/0"
+          },
+{
+            "IpProtocol": "tcp",
+            "FromPort": "8443",
+            "ToPort": "8443",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "ExternalInterface": {
+      "Type": "AWS::EC2::NetworkInterface",
+      "Properties": {
+        "Description": "Interface for the BigIP",
+        "GroupSet": [ { "Ref": "InstanceSecurityGroup" } ],
+        "SubnetId": { "Ref": "Subnet1" }
+      }
+    },
     "BIGIPINSTANCE": {
       "Type": "AWS::EC2::Instance",
       "Metadata": {
@@ -204,8 +256,10 @@
                       "true;",
                       { "Ref": "applicationName" },
                       "WAF0;",
-                      { "Fn::GetAtt": ["BIGIPINSTANCE", "PrivateIp"] },
-                      ";adminpassword",
+                      { "Fn::GetAtt": ["ExternalInterface", "PrimaryPrivateIpAddress"] },
+                      ";",
+                      { "Ref": "adminPassword" },
+                      ";",
                       { "Ref": "licenseToken1" },
                       ";",
                       { "Ref": "applicationName" },
@@ -250,6 +304,13 @@
           {
             "Key": "Name",
             "Value": "F5 WAF Solution"
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+            "Description": "F5 WAF Network Interface",
+            "DeviceIndex": "0",
+            "NetworkInterfaceId": { "Ref": "ExternalInterface" }
           }
         ],
         "UserData": {
