@@ -1,0 +1,16 @@
+demoapp04
+
+demoapp04ELB1-848016618.us-west-2.elb.amazonaws.com
+
+demoapp04.eisconsult.com
+
+https://dl.dropboxusercontent.com/s/jie5o8fx5u8skzt/EIS-WildCard.crt
+
+https://dl.dropboxusercontent.com/s/qrkahjqr22v0loa/EIS-WildCard.key
+
+MXSOG-BEHUH-CXXMN-KFRVI-VDHDXAJ
+
+vpc-34358451
+
+subnet-fbb41b8c
+
