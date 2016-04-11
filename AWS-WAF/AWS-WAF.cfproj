@@ -20,6 +20,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="azuresecurity.sh">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="BigIPBYOLCFT.template">
       <SubType>Content</SubType>
     </Content>
@@ -30,6 +33,9 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="BYOLamiWebServerOnlyAutoScale_v2.json">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="start.sh">
       <SubType>Content</SubType>
     </Content>
   </ItemGroup>
