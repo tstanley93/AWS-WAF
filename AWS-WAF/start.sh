@@ -59,7 +59,7 @@ IFS=';' read -ra asmarr <<< "$6"
 echo "$6" >> /config/inbound_params.txt
 
 ## Get certificate file if it was supplied.
-if [ "${asmarr[3]}" != "" ]
+if [ ${asmarr[3]} != "" ]
 then
 	certpath=${asmarr[3]}
 	IFS='/' read -a certpatharr <<< "$certpath"
@@ -72,7 +72,7 @@ then
 fi
 
 ## Get key file if it was supplied.
-if [ "${asmarr[4]}" != "" ]
+if [ ${asmarr[4]} != "" ]
 then
 	keypath=${asmarr[4]}
 	IFS='/' read -ra keypatharr <<< "$keypath"
@@ -85,7 +85,7 @@ then
 fi
 
 ## Get chain file if it was supplied.
-if [ "${asmarr[5]}" != "" ]
+if [ ${asmarr[5]} != "" ]
 then
 	chainpath=${asmarr[5]}
 	IFS='/' read -ra chainpatharr <<< "$chainpath"
@@ -113,4 +113,4 @@ mv ./azuresecurity.sh /config/azuresecurity.sh
 chmod +w /config/startup
 echo "/config/azuresecurity.sh" >> /config/startup
 chmod u+x /config/azuresecurity.sh
-/bin/bash /config/azuresecurity.sh
+bash /config/azuresecurity.sh
