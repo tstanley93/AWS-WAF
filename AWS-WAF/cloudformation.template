@@ -310,13 +310,13 @@
                     "config" : {
                         "files" : {
                             "/config/azuresecurity.sh" : {
-                                "source" : "https://raw.githubusercontent.com/tstanley93/Azure-WAF/WAF-Solution/azuresecurity.sh",
+                                "source" : "https://raw.githubusercontent.com/tstanley93/AWS-WAF/master/AWS-WAF/azuresecurity.sh",
                                 "mode"   : "000755",
                                 "owner"  : "root",
                                 "group"  : "root"
                             },
                             "/config/start.sh"         : {
-                                "source" : "https://raw.githubusercontent.com/tstanley93/Azure-WAF/WAF-Solution/start.sh",
+                                "source" : "https://raw.githubusercontent.com/tstanley93/AWS-WAF/master/AWS-WAF/start.sh",
                                 "mode"   : "000755",
                                 "owner"  : "root",
                                 "group"  : "root"
