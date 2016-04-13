@@ -217,31 +217,31 @@
     "Mappings"                 : {
         "BigIPRegionMap" : {
             "us-east-1" : {
-                "Best" : "ami-eb421d8e"
+                "Best" : "ami-b89284d2"
             },
             "us-west-1" : {
-                "Best" : "ami-a70bc8e3"
+                "Best" : "ami-25b5c945"
             },
             "us-west-2" : {
-                "Best" : "ami-e2d735d1"
+                "Best" : "ami-5fe81c3f"
             },
             "eu-west-1" : {
-                "Best" : "ami-3798a740"
+                "Best" : "ami-28c84b5b"
             },
             "eu-central-1" : {
-                "Best" : "ami-5e8c8043"
+                "Best" : "ami-7e43a211"
             },
             "sa-east-1"    : {
-                "Best" : "ami-a3952dcf"
+                "Best" : "ami-8f20afe3"
             },
             "ap-southeast-1" : {
-                "Best" : "ami-3c9a896e"
+                "Best" : "ami-93f82df0"
             },
             "ap-southeast-2" : {
-                "Best" : "ami-bfd69c85"
+                "Best" : "ami-bc486adf"
             },
             "ap-northeast-1" : {
-                "Best" : "ami-bcf69bbc"
+                "Best" : "ami-9f1704f1"
             }
         }
     },
