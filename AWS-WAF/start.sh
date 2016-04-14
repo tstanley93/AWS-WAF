@@ -56,12 +56,17 @@ echo "$4" >> /config/inbound_params.txt
 IFS=';' read -ra appportarr <<< "$5" 
 echo "$5" >> /config/inbound_params.txt   
 IFS=';' read -ra asmarr <<< "$6"
+# string to lower asmarr[0] and asmarr[1]
+string1= "${asmarr[0],,}"
+string2= "${asmarr[1],,}"
+${asmarr[0]}= "$string1"
+${asmarr[1]}= "$string2"
 echo "$6" >> /config/inbound_params.txt
 
 ## Get certificate file if it was supplied.
 if [ "${asmarr[3]}" != "" ]
 then
-	certpath=${asmarr[3]}
+	certpath="${asmarr[3]}"
 	IFS='/' read -a certpatharr <<< "$certpath"
 	certlength=${#certpatharr[@]}
 	certlastposition=$((certlength - 1))

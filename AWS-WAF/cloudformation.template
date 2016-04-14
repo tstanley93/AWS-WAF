@@ -97,17 +97,17 @@
         "licenseToken2" : {
             "Description" : "(Optional) The License Token for the second BYOL F5 Web Application Firewall if applicable.",
             "Type"        : "String",
-			"Default"	  : ""
+            "Default"     : ""
         },
         "licenseToken3" : {
             "Description" : "(Optional) The License Token for the third BYOL F5 Web Application Firewall if applicable.",
             "Type"        : "String",
-			"Default"	  : ""
+            "Default"     : ""
         },
         "licenseToken4" : {
             "Description" : "(Optional) The License Token for the fourth BYOL F5 Web Application Firewall if applicablbe.",
             "Type"        : "String",
-			"Default"	  : ""
+            "Default"     : ""
         },
         "BigIPInstanceType" : {
             "Description" : "F5 BIG-IP Virtual Instance Type",
@@ -415,7 +415,7 @@
                 "Tags"         : [
                     {
                         "Key" : "Name",
-                        "Value" : "F5 WAF Solution"
+                        "Value" : "F5 WAF 01"
                     }
                 ],
                 "NetworkInterfaces" : [
@@ -446,6 +446,84 @@
                         ]
                     }
                 }
+            }
+        },
+        "SlaveWAFLC"          : {
+            "Type" : "AWS::AutoScaling::LaunchConfiguration",
+            "Properties" : {
+                "AssociatePublicIpAddress" : false,
+                "ImageId"                  : {
+                    "Fn::FindInMap" : [
+                        "BigIPRegionMap",
+                        {
+                            "Ref" : "AWS::Region"
+                        },
+                        "Best"
+                    ]
+                },
+                "InstanceType"             : {
+                    "Ref" : "BigIPInstanceType"
+                },
+                "KeyName"                  : {
+                    "Ref" : "KeyName"
+                },
+                "SecurityGroups"           : [
+                    {
+                        "Fn::GetAtt" : [
+                            "WebServerSecurityGroup",
+                            "GroupId"
+                        ]
+                    }
+                ],
+                "UserData"                 : {
+                    "Fn::Base64" : {
+                        "Fn::Join" : [
+                            "",
+                            [
+                                "#!/bin/bash -x\n",
+                                "yum -y update\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "SlaveWAFAutoScaleGroup" : {
+            "Type" : "AWS::AutoScaling::AutoScalingGroup",
+            "DependsOn" : "AttachGateway",
+            "Properties" : {
+                "Tags" : [
+                    {
+                        "Key" : "Name",
+                        "Value" : "Web Server AutoScale PoolMember"
+                    }
+                ],
+                "AvailabilityZones" : [
+                    {
+                        "Fn::GetAtt" : [
+                            "InternalSubnet",
+                            "AvailabilityZone"
+                        ]
+                    }
+                ],
+                "VPCZoneIdentifier" : [
+                    {
+                        "Ref" : "InternalSubnet"
+                    }
+                ],
+                "Cooldown"          : "600",
+                "HealthCheckGracePeriod" : 120,
+                "HealthCheckType"        : "EC2",
+                "LaunchConfigurationName" : {
+                    "Ref" : "PoolMemberLC"
+                },
+                "MaxSize"                 : "3",
+                "MinSize"                 : "1",
+                "MetricsCollection"       : [
+                    {
+                        "Granularity" : "1Minute"
+                    }
+                ]
             }
         }
     },
