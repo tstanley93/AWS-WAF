@@ -448,82 +448,40 @@
                 }
             }
         },
-        "SlaveWAFLC"          : {
-            "Type" : "AWS::AutoScaling::LaunchConfiguration",
-            "Properties" : {
-                "AssociatePublicIpAddress" : false,
-                "ImageId"                  : {
-                    "Fn::FindInMap" : [
-                        "BigIPRegionMap",
-                        {
-                            "Ref" : "AWS::Region"
-                        },
-                        "Best"
-                    ]
-                },
-                "InstanceType"             : {
-                    "Ref" : "BigIPInstanceType"
-                },
-                "KeyName"                  : {
-                    "Ref" : "KeyName"
-                },
-                "SecurityGroups"           : [
-                    {
-                        "Fn::GetAtt" : [
-                            "WebServerSecurityGroup",
-                            "GroupId"
-                        ]
-                    }
-                ],
-                "UserData"                 : {
-                    "Fn::Base64" : {
-                        "Fn::Join" : [
-                            "",
-                            [
-                                "#!/bin/bash -x\n",
-                                "yum -y update\n"
-                            ]
-                        ]
-                    }
-                }
-            }
-        },
         "SlaveWAFAutoScaleGroup" : {
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
-            "DependsOn" : "AttachGateway",
+            "DependsOn" : "BIGIPINSTANCE",
             "Properties" : {
                 "Tags" : [
                     {
                         "Key" : "Name",
-                        "Value" : "Web Server AutoScale PoolMember"
+                        "Value" : "F5 WAF Cluster Members"
                     }
                 ],
                 "AvailabilityZones" : [
                     {
                         "Fn::GetAtt" : [
-                            "InternalSubnet",
+                            "Subnet1",
                             "AvailabilityZone"
                         ]
                     }
                 ],
                 "VPCZoneIdentifier" : [
                     {
-                        "Ref" : "InternalSubnet"
+                        "Ref" : "Subnet1"
                     }
                 ],
                 "Cooldown"          : "600",
                 "HealthCheckGracePeriod" : 120,
                 "HealthCheckType"        : "EC2",
-                "LaunchConfigurationName" : {
-                    "Ref" : "PoolMemberLC"
-                },
+                "InstanceId" : {
+					"Ref" : "BIGIPINSTANCE"
+				},
                 "MaxSize"                 : "3",
-                "MinSize"                 : "1",
-                "MetricsCollection"       : [
-                    {
-                        "Granularity" : "1Minute"
-                    }
-                ]
+                "MinSize"                 : "0",
+				"DesiredCapacity"		  : {
+					"Ref" : "numberOFWAFs"
+				}
             }
         }
     },
