@@ -285,6 +285,7 @@
         },
         "ExternalInterface"     : {
             "Type" : "AWS::EC2::NetworkInterface",
+			"DependsOn" : "InstanceSecurityGroup",
             "Properties" : {
                 "Description" : "Interface for the BigIP",
                 "Tags"        : [
@@ -303,8 +304,9 @@
                 }
             }
         },
-        "BIGIPINSTANCE"         : {
+        "BIGIPInstance"         : {
             "Type" : "AWS::EC2::Instance",
+			"DependsOn" : "ExternalInterface",
             "Metadata" : {
                 "AWS::CloudFormation::Init" : {
                     "config" : {
@@ -351,7 +353,7 @@
                                             {
                                                 "Ref" : "applicationName"
                                             },
-                                            "' '880;8444' '",
+                                            "' '80;443' '",
                                             {
                                                 "Ref" : "applicationProtocols"
                                             },
@@ -415,7 +417,7 @@
                 "Tags"         : [
                     {
                         "Key" : "Name",
-                        "Value" : "F5 WAF 01"
+                        "Value" : "F5-WAF-01"
                     }
                 ],
                 "NetworkInterfaces" : [
@@ -437,7 +439,7 @@
                                 {
                                     "Ref" : "AWS::StackId"
                                 },
-                                " -r BIGIPINSTANCE --region ",
+                                " -r BIGIPInstance --region ",
                                 {
                                     "Ref" : "AWS::Region"
                                 },
@@ -448,40 +450,151 @@
                 }
             }
         },
-        "SlaveWAFAutoScaleGroup" : {
-            "Type" : "AWS::AutoScaling::AutoScalingGroup",
-            "DependsOn" : "BIGIPINSTANCE",
-            "Properties" : {
-                "Tags" : [
-                    {
-                        "Key" : "Name",
-                        "Value" : "F5 WAF Cluster Members"
+		"LaunchConfig" : {
+		   "Type" : "AWS::AutoScaling::LaunchConfiguration",
+		   "Metadata" : {
+                "AWS::CloudFormation::Init" : {
+                    "config" : {
+                        "files" : {
+                            "/config/azuresecurity.sh" : {
+                                "source" : "https://raw.githubusercontent.com/tstanley93/AWS-WAF/master/AWS-WAF/azuresecurity.sh",
+                                "mode"   : "000755",
+                                "owner"  : "root",
+                                "group"  : "root"
+                            },
+                            "/config/start.sh"         : {
+                                "source" : "https://raw.githubusercontent.com/tstanley93/AWS-WAF/master/AWS-WAF/start.sh",
+                                "mode"   : "000755",
+                                "owner"  : "root",
+                                "group"  : "root"
+                            }
+                        },
+                        "commands" : {
+                            "start" : {
+                                "command" : {
+                                    "Fn::Join" : [
+                                        "",
+                                        [
+                                            "/bin/bash /config/start.sh 'false;",
+                                            {
+                                                "Ref" : "applicationName"
+                                            },
+                                            "WAF1;;",
+                                            {
+                                                "Ref" : "adminPassword"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "licenseToken2"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "applicationName"
+                                            },
+											{
+                                                "Ref" : "applicationName"
+                                            },
+                                            "WAF0;",
+											{
+                                                "Fn::GetAtt" : [
+                                                    "ExternalInterface",
+                                                    "PrimaryPrivateIpAddress"
+                                                ]
+                                            },
+                                            "' '80;443' '",
+                                            {
+                                                "Ref" : "applicationProtocols"
+                                            },
+                                            "' '",
+                                            {
+                                                "Ref" : "applicationAddress"
+                                            },
+                                            ";aws' '",
+                                            {
+                                                "Ref" : "applicationPorts"
+                                            },
+                                            "' '",
+                                            {
+                                                "Ref" : "applicationType"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "blockingLevel"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "applicationFQDN"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "applicationCertificate"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "applicationKey"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "applicationChain"
+                                            },
+                                            "'\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        }
                     }
-                ],
-                "AvailabilityZones" : [
-                    {
-                        "Fn::GetAtt" : [
-                            "Subnet1",
-                            "AvailabilityZone"
+                }
+            },
+		   "Properties" : {			  
+			  "ImageId" : {
+                    "Fn::FindInMap" : [
+                        "BigIPRegionMap",
+                        {
+                            "Ref" : "AWS::Region"
+                        },
+                        "Best"
+                    ]
+                },
+			  "InstanceType" : { "Ref" : "BigIPInstanceType" },
+			  "InstanceId" : { "Ref" : "BIGIPInstance" },
+			  "UserData"          : {
+                    "Fn::Base64" : {
+                        "Fn::Join" : [
+                            "",
+                            [
+                                "#!/bin/bash\n",
+                                "/opt/aws/apitools/cfn-init-1.4-0.amzn1/bin/cfn-init -v -s ",
+                                {
+                                    "Ref" : "AWS::StackId"
+                                },
+                                " -r BIGIPInstance --region ",
+                                {
+                                    "Ref" : "AWS::Region"
+                                },
+                                "\n"
+                            ]
                         ]
                     }
-                ],
+                }
+		   }
+		},
+        "SlaveWAFAutoScaleGroup" : {
+            "Type" : "AWS::AutoScaling::AutoScalingGroup",
+            "DependsOn" : "BIGIPInstance",
+            "Properties" : {
                 "VPCZoneIdentifier" : [
                     {
                         "Ref" : "Subnet1"
                     }
                 ],
-                "Cooldown"          : "600",
-                "HealthCheckGracePeriod" : 120,
-                "HealthCheckType"        : "EC2",
-                "InstanceId" : {
-					"Ref" : "BIGIPINSTANCE"
-				},
+                "Cooldown"				  : "600",
+                "HealthCheckGracePeriod"  : 120,
+                "HealthCheckType"         : "EC2",
+                "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
                 "MaxSize"                 : "3",
                 "MinSize"                 : "0",
-				"DesiredCapacity"		  : {
-					"Ref" : "numberOFWAFs"
-				}
+				"DesiredCapacity"		  : { "Ref" : "numberOFWAFs" }
             }
         }
     },

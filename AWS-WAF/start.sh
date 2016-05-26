@@ -63,6 +63,10 @@ ${asmarr[0]}= "$string1"
 ${asmarr[1]}= "$string2"
 echo "$6" >> /config/inbound_params.txt
 
+## find our internal IP address and populate devicearr2
+ipaddr=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/')
+${devicearr[2]}= "$ipaddr"
+
 ## Get certificate file if it was supplied.
 if [ "${asmarr[3]}" != "" ]
 then
@@ -116,6 +120,7 @@ echo $jsonfile > /config/blackbox.conf
 ## Move the files and run them.
 # mv ./azuresecurity.sh /config/azuresecurity.sh
 # chmod +w /config/startup
+tmsh create auth user 'azureuser' partition-access add '{ all-partitions { role admin } }' shell bash password '${devicearr[3]}'
 echo "/config/azuresecurity.sh" >> /config/startup
 # chmod u+x /config/azuresecurity.sh
 bash /config/azuresecurity.sh
