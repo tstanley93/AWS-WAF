@@ -212,6 +212,11 @@
         "Subnet1"                : {
             "Description" : "ID of the existing subnet that the application servers are installed on.",
             "Type"        : "AWS::EC2::Subnet::Id"
+        },
+		"slaveTemplateURL"       : {
+            "Description" : "The S3 path to the slave_wafs.template file.",
+            "Type"        : "String",
+            "Default"     : ""
         }
     },
     "Mappings"                 : {
@@ -452,9 +457,21 @@
         },
 		"SlaveWAFs" : {
 			"Type" : "AWS::CloudFormation::Stack",
-			"DependsOn" : { "Ref" : "BigIPInstanceType" },
+			"DependsOn" : "BIGIPInstance",
 			"Properties" : {
-				"TemplateURL" : "https://raw.githubusercontent.com/tstanley93/AWS-WAF/master/AWS-WAF/slave_wafs.template",
+				"TemplateURL" : {
+                    "Fn::Base64" : {
+                        "Fn::Join" : [
+                            "",
+                            [
+                                {
+									"Ref" : "slaveTemplateURL"
+								},
+								"/slave_wafs.template"
+                            ]
+                        ]
+                    }
+                },
 				"TimeoutInMinutes" : "60",
 				"Parameters" : {
 					"KeyName" : { "Ref" : "KeyName" },
