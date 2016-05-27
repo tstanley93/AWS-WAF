@@ -454,7 +454,7 @@
 			"Type" : "AWS::CloudFormation::Stack",
 			"DependsOn" : { "Ref" : "BigIPInstanceType" },
 			"Properties" : {
-				"TemplateURL" : "",
+				"TemplateURL" : "https://raw.githubusercontent.com/tstanley93/AWS-WAF/master/AWS-WAF/slave_wafs.template",
 				"TimeoutInMinutes" : "60",
 				"Parameters" : {
 					"KeyName" : { "Ref" : "KeyName" },
