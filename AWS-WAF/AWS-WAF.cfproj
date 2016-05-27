@@ -18,6 +18,9 @@
     <Compile Include="cloudformation.template">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="slave_wafs.template">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="azuresecurity.sh">

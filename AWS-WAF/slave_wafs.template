@@ -1,74 +1,10 @@
 {
-    "AWSTemplateFormatVersion" : "2010-09-09",
-    "Description"              : "AWS Cloud Formation Template for creating a F5 WAF Solution Cluster.",
-    "Metadata"                 : {
-        "AWS::CloudFormation::Interface" : {
-            "ParameterGroups" : [
-                {
-                    "Label" : {
-                        "default" : "Infrastructure Settings"
-                    },
-                    "Parameters" : [
-                        "adminPassword",
-                        "SSHLocation",
-                        "numberOFWAFs",
-                        "BigIPInstanceType",
-                        "KeyName",
-                        "VpcId",
-                        "Subnet1"
-                    ]
-                },
-                {
-                    "Label" : {
-                        "default" : "F5 WAF Config"
-                    },
-                    "Parameters" : [
-                        "licenseToken1",
-                        "licenseToken2",
-                        "licenseToken3",
-                        "licenseToken4"
-                    ]
-                },
-                {
-                    "Label" : {
-                        "default" : "Application Settings"
-                    },
-                    "Parameters" : [
-                        "applicationName",
-                        "applicationProtocols",
-                        "applicationAddress",
-                        "applicationPorts",
-                        "applicationType",
-                        "applicationFQDN"
-                    ]
-                },
-                {
-                    "Label" : {
-                        "default" : "Security Settings"
-                    },
-                    "Parameters" : [
-                        "blockingLevel",
-                        "applicationCertificate",
-                        "applicationKey",
-                        "applicationChain"
-                    ]
-                }
-            ],
-            "ParameterLabels" : {
-                "VpcId" : {
-                    "default" : "Please choose which VPC this F5 WAF Cluster should be connected to."
-                },
-                "Subnet1" : {
-                    "default" : "Please choose which Subnet this F5 WAF Cluster should be connected to."
-                },
-                "KeyName" : {
-                    "default" : "Please choose which KeyName should be used for access to this F5 WAF Cluster."
-                }
-            }
-        }
-    },
-    "Parameters"               : {
-        "KeyName" : {
+	"AWSTemplateFormatVersion" : "2010-09-09",
+
+	"Description" : "AWS Cloud Formation Template for creating the slave WAF's of a F5 WAF Solution Cluster.",
+
+	"Parameters" : {
+		"KeyName" : {
             "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
             "Type"        : "AWS::EC2::KeyPair::KeyName"
         },
@@ -85,14 +21,6 @@
             "Description" : "The password you will use to login to the BIG-IP User Interface with.",
             "Type"        : "String",
             "NoEcho"      : "true"
-        },
-        "licenseToken1" : {
-            "Description" : "(Required) The License Token for the first BYOL F5 Web Application Firewall.",
-            "Type"        : "String",
-            "MinLength"   : "1",
-            "MaxLength"   : "255",
-            "AllowedPattern" : "([\\x41-\\x5A][\\x41-\\x5A|\\x30-\\x39]{4})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{7})",
-            "ConstraintDescription" : "Please verify your F5 BYOL regkey."
         },
         "licenseToken2" : {
             "Description" : "(Optional) The License Token for the second BYOL F5 Web Application Firewall if applicable.",
@@ -212,102 +140,25 @@
         "Subnet1"                : {
             "Description" : "ID of the existing subnet that the application servers are installed on.",
             "Type"        : "AWS::EC2::Subnet::Id"
-        }
-    },
-    "Mappings"                 : {
-        "BigIPRegionMap" : {
-            "us-east-1" : {
-                "Best" : "ami-b89284d2"
-            },
-            "us-west-1" : {
-                "Best" : "ami-25b5c945"
-            },
-            "us-west-2" : {
-                "Best" : "ami-5fe81c3f"
-            },
-            "eu-west-1" : {
-                "Best" : "ami-28c84b5b"
-            },
-            "eu-central-1" : {
-                "Best" : "ami-7e43a211"
-            },
-            "sa-east-1"    : {
-                "Best" : "ami-8f20afe3"
-            },
-            "ap-southeast-1" : {
-                "Best" : "ami-93f82df0"
-            },
-            "ap-southeast-2" : {
-                "Best" : "ami-bc486adf"
-            },
-            "ap-northeast-1" : {
-                "Best" : "ami-9f1704f1"
-            }
-        }
-    },
-    "Resources"                : {
-        "InstanceSecurityGroup" : {
-            "Type" : "AWS::EC2::SecurityGroup",
-            "Properties" : {
-                "VpcId" : {
-                    "Ref" : "VpcId"
-                },
-                "GroupDescription" : "Enable SSH HTTP and HTTPS access to this instance",
-                "SecurityGroupIngress" : [
-                    {
-                        "IpProtocol" : "tcp",
-                        "FromPort"   : "22",
-                        "ToPort"     : "22",
-                        "CidrIp"     : {
-                            "Ref" : "SSHLocation"
-                        }
-                    },
-                    {
-                        "IpProtocol" : "tcp",
-                        "FromPort"   : "80",
-                        "ToPort"     : "80",
-                        "CidrIp"     : "0.0.0.0/0"
-                    },
-                    {
-                        "IpProtocol" : "tcp",
-                        "FromPort"   : "443",
-                        "ToPort"     : "443",
-                        "CidrIp"     : "0.0.0.0/0"
-                    },
-                    {
-                        "IpProtocol" : "tcp",
-                        "FromPort"   : "8443",
-                        "ToPort"     : "8443",
-                        "CidrIp"     : "0.0.0.0/0"
-                    }
-                ]
-            }
         },
-        "ExternalInterface"     : {
-            "Type" : "AWS::EC2::NetworkInterface",
-			"DependsOn" : "InstanceSecurityGroup",
-            "Properties" : {
-                "Description" : "Interface for the BigIP",
-                "Tags"        : [
-                    {
-                        "Key" : "Name",
-                        "Value" : "F5 WAF Solution"
-                    }
-                ],
-                "GroupSet"    : [
-                    {
-                        "Ref" : "InstanceSecurityGroup"
-                    }
-                ],
-                "SubnetId"    : {
-                    "Ref" : "Subnet1"
-                }
-            }
-        },
-        "BIGIPInstance"         : {
-            "Type" : "AWS::EC2::Instance",
-			"DependsOn" : "ExternalInterface",
-            "Metadata" : {
+		"masterWAFAddress" : {
+			"Description" : "IP address of the master waf created in the master template.",
+			"Type" : "String"
+		},
+		"masterWAFImageID" : {
+			"Description" : "ImageID of the master waf created in the master template.",
+			"Type" : "String"
+		},
+		"securityGroup" : {
+			"Description" : "Security Group created in the master template.",
+			"Type" : "String"
+		}
+	},
+
+	"Resources" : {
+		"LaunchConfig" : {
+		   "Type" : "AWS::AutoScaling::LaunchConfiguration",
+		   "Metadata" : {
                 "AWS::CloudFormation::Init" : {
                     "config" : {
                         "files" : {
@@ -330,29 +181,29 @@
                                     "Fn::Join" : [
                                         "",
                                         [
-                                            "/bin/bash /config/start.sh 'true;",
+                                            "/bin/bash /config/start.sh 'false;",
                                             {
                                                 "Ref" : "applicationName"
                                             },
-                                            "WAF0;",
-                                            {
-                                                "Fn::GetAtt" : [
-                                                    "ExternalInterface",
-                                                    "PrimaryPrivateIpAddress"
-                                                ]
-                                            },
-                                            ";",
+                                            "WAF1;;",
                                             {
                                                 "Ref" : "adminPassword"
                                             },
                                             ";",
                                             {
-                                                "Ref" : "licenseToken1"
+                                                "Ref" : "licenseToken2"
                                             },
                                             ";",
                                             {
                                                 "Ref" : "applicationName"
                                             },
+											{
+                                                "Ref" : "applicationName"
+                                            },
+                                            "WAF0;",
+											{
+												"Ref" : "masterWAFAddress"
+											},
                                             "' '80;443' '",
                                             {
                                                 "Ref" : "applicationProtocols"
@@ -398,38 +249,12 @@
                     }
                 }
             },
-            "Properties" : {
-                "ImageId" : {
-                    "Fn::FindInMap" : [
-                        "BigIPRegionMap",
-                        {
-                            "Ref" : "AWS::Region"
-                        },
-                        "Best"
-                    ]
-                },
-                "InstanceType" : {
-                    "Ref" : "BigIPInstanceType"
-                },
-                "KeyName"      : {
-                    "Ref" : "KeyName"
-                },
-                "Tags"         : [
-                    {
-                        "Key" : "Name",
-                        "Value" : "F5-WAF-01"
-                    }
-                ],
-                "NetworkInterfaces" : [
-                    {
-                        "Description" : "F5 WAF Network Interface",
-                        "DeviceIndex" : "0",
-                        "NetworkInterfaceId" : {
-                            "Ref" : "ExternalInterface"
-                        }
-                    }
-                ],
-                "UserData"          : {
+		   "Properties" : {			  
+			  "ImageId" : { "Ref" : "masterWAFImageID" },
+			  "InstanceType" : { "Ref" : "BigIPInstanceType" },
+			  "KeyName" : { "Ref" : "KeyName" },
+			  "SecurityGroups" : [ {"Ref" : "securityGroup"} ],
+			  "UserData"          : {
                     "Fn::Base64" : {
                         "Fn::Join" : [
                             "",
@@ -448,55 +273,32 @@
                         ]
                     }
                 }
+		   }
+		},
+        "SlaveWAFAutoScaleGroup" : {
+            "Type" : "AWS::AutoScaling::AutoScalingGroup",
+            "Properties" : {
+                "VPCZoneIdentifier" : [
+                    {
+                        "Ref" : "Subnet1"
+                    }
+                ],
+				"Tags" : [ {
+					 "Key" : "Name",
+					 "Value" : "Slave WAF",
+					 "PropagateAtLaunch" : "true"
+				 } ],
+                "Cooldown"				  : "600",
+                "HealthCheckGracePeriod"  : 120,
+                "HealthCheckType"         : "EC2",
+                "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
+                "MaxSize"                 : "3",
+                "MinSize"                 : "0",
+				"DesiredCapacity"		  : { "Ref" : "numberOFWAFs" }
             }
-        },
-		"SlaveWAFs" : {
-			"Type" : "AWS::CloudFormation::Stack",
-			"DependsOn" : { "Ref" : "BigIPInstanceType" },
-			"Properties" : {
-				"TemplateURL" : "",
-				"TimeoutInMinutes" : "60",
-				"Parameters" : {
-					"KeyName" : { "Ref" : "KeyName" },
-					"SSHLocation" : { "Ref" : "SSHLocation" },
-					"adminPassword" : { "Ref" : "adminPassword" },
-					"licenseToken2" : { "Ref" : "licenseToken2" },
-					"licenseToken3" : { "Ref" : "licenseToken3" },
-					"licenseToken4" : { "Ref" : "licenseToken4" },
-					"BigIPInstanceType" : { "Ref" : "BigIPInstanceType" },
-					"numberOFWAFs" : { "Ref" : "numberOFWAFs" },
-					"applicationName" : { "Ref" : "applicationName" },
-					"applicationProtocols" : { "Ref" : "applicationProtocols" },
-					"applicationAddress" : { "Ref" : "applicationAddress" },
-					"applicationPorts" : { "Ref" : "applicationPorts" },
-					"applicationType" : { "Ref" : "applicationType" },
-					"blockingLevel" : { "Ref" : "blockingLevel" },
-					"applicationFQDN" : { "Ref" : "applicationFQDN" },
-					"applicationCertificate" : { "Ref" : "applicationCertificate" },
-					"applicationKey" : { "Ref" : "applicationKey" },
-					"applicationChain" : { "Ref" : "applicationChain" },
-					"VpcId" : { "Ref" : "VpcId" },
-					"Subnet1" : { "Ref" : "Subnet1" },
-					"masterWAFAddress" : {
-						"Fn::GetAtt" : [
-                            "ExternalInterface",
-                            "PrimaryPrivateIpAddress"
-                        ]
-					},
-					"masterWAFImageID" : {
-						"Fn::FindInMap" : [
-							"BigIPRegionMap",
-							{
-								"Ref" : "AWS::Region"
-							},
-							"Best"
-						]
-					},
-					"securityGroup" : { "Ref" : "InstanceSecurityGroup" }
-				}
-			}
-		}
-    },
-    "Outputs"                  : {
-    }
+        }
+	},
+
+	"Outputs" : {
+	}
 }
