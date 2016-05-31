@@ -75,9 +75,9 @@ then
 	certlength=${#certpatharr[@]}
 	certlastposition=$((certlength - 1))
 	certfilename=${certpatharr[${certlastposition}]}
-	curl -kO ${asmarr[3]}
+	#curl -kO ${asmarr[3]}	
 	certpath="file::/config/ssl/$certfilename"
-	mv ./"$certfilename" /config/ssl/"$certfilename"
+	mv /config/ssl/cert.crt /config/ssl/"$certfilename"
 fi
 
 ## Get key file if it was supplied.
@@ -88,9 +88,9 @@ then
 	keylength=${#keypatharr[@]}
 	keylastposition=$((keylength - 1))
 	keyfilename=${keypatharr[${keylastposition}]}
-	curl -kO ${asmarr[4]}
+	#curl -kO ${asmarr[4]}
 	keypath="file::/config/ssl/$keyfilename"
-	mv ./"$keyfilename" /config/ssl/"$keyfilename"
+	mv /config/ssl/key.key /config/ssl/"$keyfilename"
 fi
 
 ## Get chain file if it was supplied.
@@ -101,9 +101,9 @@ then
 	chainlength=${#chainpatharr[@]}
 	chainlastposition=$((chainlength - 1))
 	chainfilename=${chainpatharr[${chainlastposition}]}
-	curl -kO ${asmarr[5]}
+	#curl -kO ${asmarr[5]}
 	chainpath="file::/config/ssl/$chainfilename"
-	mv ./"$chainfilename" /config/ssl/"$chainfilename"
+	mv /config/ssl/chain.crt /config/ssl/"$chainfilename"
 fi
 
 
@@ -120,7 +120,7 @@ echo $jsonfile > /config/blackbox.conf
 ## Move the files and run them.
 # mv ./azuresecurity.sh /config/azuresecurity.sh
 # chmod +w /config/startup
-tmsh create auth user "azureuser" partition-access add { all-partitions { role admin } } shell bash password "${devicearr[3]}"
+tmsh create auth user "admin" password "${devicearr[3]}"
 echo "/config/azuresecurity.sh" >> /config/startup
 # chmod u+x /config/azuresecurity.sh
 bash /config/azuresecurity.sh

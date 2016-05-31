@@ -169,6 +169,24 @@
                                 "mode"   : "000755",
                                 "owner"  : "root",
                                 "group"  : "root"
+                            },
+							"/config/ssl/cert.crt"         : {
+                                "source" : { "Ref" : "applicationCertificate" },
+                                "mode"   : "000755",
+                                "owner"  : "root",
+                                "group"  : "root"
+                            },
+							"/config/ssl/key.key"         : {
+                                "source" : { "Ref" : "applicationKey" },
+                                "mode"   : "000755",
+                                "owner"  : "root",
+                                "group"  : "root"
+                            },
+							"/config/ssl/chain.crt"         : {
+                                "source" : { "Ref" : "applicationChain" },
+                                "mode"   : "000755",
+                                "owner"  : "root",
+                                "group"  : "root"
                             }
                         },
                         "commands" : {
@@ -193,6 +211,7 @@
                                             {
                                                 "Ref" : "applicationName"
                                             },
+											";",
 											{
                                                 "Ref" : "applicationName"
                                             },
