@@ -11,11 +11,14 @@
                     "Parameters" : [
                         "adminPassword",
                         "SSHLocation",
-                        "numberOFWAFs",
+                        "numberOFSlaveWAFs",
                         "BigIPInstanceType",
                         "KeyName",
                         "VpcId",
-                        "Subnet1"
+                        "Subnet1",
+						"MasterTemplateURL",
+						"slaveTemplateURL"
+
                     ]
                 },
                 {
@@ -369,7 +372,7 @@
 					"licenseToken3" : { "Ref" : "licenseToken3" },
 					"licenseToken4" : { "Ref" : "licenseToken4" },
 					"BigIPInstanceType" : { "Ref" : "BigIPInstanceType" },
-					"numberOFWAFs" : { "Ref" : "numberOFSlaveWAFs" },
+					"numberOFSlaveWAFs" : { "Ref" : "numberOFSlaveWAFs" },
 					"applicationName" : { "Ref" : "applicationName" },
 					"applicationProtocols" : { "Ref" : "applicationProtocols" },
 					"applicationAddress" : { "Ref" : "applicationAddress" },
