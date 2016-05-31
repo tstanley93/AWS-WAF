@@ -1,7 +1,7 @@
 {
 	"AWSTemplateFormatVersion" : "2010-09-09",
 
-	"Description" : "AWS Cloud Formation Template for creating the slave WAF's of a F5 WAF Solution Cluster.",
+	"Description" : "AWS Cloud Formation Template for creating the Master WAF of a F5 WAF Solution Cluster.",
 
 	"Parameters" : {
 		"KeyName" : {
