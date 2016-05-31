@@ -57,10 +57,10 @@ IFS=';' read -ra appportarr <<< "$5"
 echo "$5" >> /config/inbound_params.txt   
 IFS=';' read -ra asmarr <<< "$6"
 # string to lower asmarr[0] and asmarr[1]
-string1= "${asmarr[0],,}"
-string2= "${asmarr[1],,}"
-${asmarr[0]}= "$string1"
-${asmarr[1]}= "$string2"
+string1="${asmarr[0],,}"
+string2="${asmarr[1],,}"
+${asmarr[0]}="$string1"
+${asmarr[1]}="$string2"
 echo "$6" >> /config/inbound_params.txt
 
 ## find our internal IP address and populate devicearr2
@@ -120,7 +120,7 @@ echo $jsonfile > /config/blackbox.conf
 ## Move the files and run them.
 # mv ./azuresecurity.sh /config/azuresecurity.sh
 # chmod +w /config/startup
-tmsh create auth user 'azureuser' partition-access add '{ all-partitions { role admin } }' shell bash password '${devicearr[3]}'
+tmsh create auth user "azureuser" partition-access add { all-partitions { role admin } } shell bash password "${devicearr[3]}"
 echo "/config/azuresecurity.sh" >> /config/startup
 # chmod u+x /config/azuresecurity.sh
 bash /config/azuresecurity.sh
