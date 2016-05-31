@@ -22,20 +22,13 @@
             "Type"        : "String",
             "NoEcho"      : "true"
         },
-        "licenseToken2" : {
-            "Description" : "(Optional) The License Token for the second BYOL F5 Web Application Firewall if applicable.",
+		"licenseToken1" : {
+            "Description" : "(Required) The License Token for the first BYOL F5 Web Application Firewall.",
             "Type"        : "String",
-            "Default"     : ""
-        },
-        "licenseToken3" : {
-            "Description" : "(Optional) The License Token for the third BYOL F5 Web Application Firewall if applicable.",
-            "Type"        : "String",
-            "Default"     : ""
-        },
-        "licenseToken4" : {
-            "Description" : "(Optional) The License Token for the fourth BYOL F5 Web Application Firewall if applicablbe.",
-            "Type"        : "String",
-            "Default"     : ""
+            "MinLength"   : "1",
+            "MaxLength"   : "255",
+            "AllowedPattern" : "([\\x41-\\x5A][\\x41-\\x5A|\\x30-\\x39]{4})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{5})\\-([\\x41-\\x5A|\\x30-\\x39]{7})",
+            "ConstraintDescription" : "Please verify your F5 BYOL regkey."
         },
         "BigIPInstanceType" : {
             "Description" : "F5 BIG-IP Virtual Instance Type",
@@ -51,18 +44,6 @@
                 "cg1.4xlarge"
             ],
             "ConstraintDescription" : "must be a valid Big-IP EC2 instance type."
-        },
-        "numberOFSlaveWAFs"      : {
-            "Description" : "The number of Slave Web Applicatin Firewall's (Up to 3) that will be deployed infront of your application, not counting the master.",
-            "Type"        : "String",
-            "Default"     : "1",
-            "AllowedValues" : [
-                "0",
-                "1",
-                "2",
-                "3"
-            ],
-            "ConstraintDescription" : "Must be a valid number between 0 and 3."
         },
         "applicationName"   : {
             "Description" : "Please provide a simple name for your application.",
@@ -133,28 +114,24 @@
             "Type"        : "String",
             "Default"     : ""
         },
-        "Subnet1"                : {
-            "Description" : "ID of the existing subnet that the application servers are installed on.",
-            "Type"        : "AWS::EC2::Subnet::Id"
-        },
 		"masterWAFAddress" : {
-			"Description" : "IP address of the master waf created in the master template.",
+			"Description" : "IP address of the master waf created in the main template.",
 			"Type" : "String"
 		},
 		"masterWAFImageID" : {
-			"Description" : "ImageID of the master waf created in the master template.",
+			"Description" : "ImageID of the master waf created in the main template.",
 			"Type" : "String"
 		},
-		"securityGroup" : {
-			"Description" : "Security Group created in the master template.",
+		"ExternalInterface" : {
+			"Description" : "External Interface created in the main template.",
 			"Type" : "String"
 		}
 	},
 
 	"Resources" : {
-		"LaunchConfig" : {
-		   "Type" : "AWS::AutoScaling::LaunchConfiguration",
-		   "Metadata" : {
+		"BIGIPInstance"         : {
+            "Type" : "AWS::EC2::Instance",
+            "Metadata" : {
                 "AWS::CloudFormation::Init" : {
                     "config" : {
                         "files" : {
@@ -177,29 +154,26 @@
                                     "Fn::Join" : [
                                         "",
                                         [
-                                            "/bin/bash /config/start.sh 'false;",
+                                            "/bin/bash /config/start.sh 'true;",
                                             {
                                                 "Ref" : "applicationName"
                                             },
-                                            "WAF1;;",
+                                            "WAF0;",
+                                            {
+												"Ref" : "masterWAFAddress"
+											},
+                                            ";",
                                             {
                                                 "Ref" : "adminPassword"
                                             },
                                             ";",
                                             {
-                                                "Ref" : "licenseToken2"
+                                                "Ref" : "licenseToken1"
                                             },
                                             ";",
                                             {
                                                 "Ref" : "applicationName"
                                             },
-											{
-                                                "Ref" : "applicationName"
-                                            },
-                                            "WAF0;",
-											{
-												"Ref" : "masterWAFAddress"
-											},
                                             "' '80;443' '",
                                             {
                                                 "Ref" : "applicationProtocols"
@@ -245,12 +219,30 @@
                     }
                 }
             },
-		   "Properties" : {			  
-			  "ImageId" : { "Ref" : "masterWAFImageID" },
-			  "InstanceType" : { "Ref" : "BigIPInstanceType" },
-			  "KeyName" : { "Ref" : "KeyName" },
-			  "SecurityGroups" : [ {"Ref" : "securityGroup"} ],
-			  "UserData"          : {
+            "Properties" : {
+                "ImageId" : { "Ref" : "masterWAFImageID" },
+                "InstanceType" : {
+                    "Ref" : "BigIPInstanceType"
+                },
+                "KeyName"      : {
+                    "Ref" : "KeyName"
+                },
+                "Tags"         : [
+                    {
+                        "Key" : "Name",
+                        "Value" : "F5-Master-WAF"
+                    }
+                ],
+                "NetworkInterfaces" : [
+                    {
+                        "Description" : "F5 WAF Network Interface",
+                        "DeviceIndex" : "0",
+                        "NetworkInterfaceId" : {
+                            "Ref" : "ExternalInterface"
+                        }
+                    }
+                ],
+                "UserData"          : {
                     "Fn::Base64" : {
                         "Fn::Join" : [
                             "",
@@ -260,7 +252,7 @@
                                 {
                                     "Ref" : "AWS::StackId"
                                 },
-                                " -r LaunchConfig --region ",
+                                " -r BIGIPInstance --region ",
                                 {
                                     "Ref" : "AWS::Region"
                                 },
@@ -269,28 +261,6 @@
                         ]
                     }
                 }
-		   }
-		},
-        "SlaveWAFAutoScaleGroup" : {
-            "Type" : "AWS::AutoScaling::AutoScalingGroup",
-            "Properties" : {
-                "VPCZoneIdentifier" : [
-                    {
-                        "Ref" : "Subnet1"
-                    }
-                ],
-				"Tags" : [ {
-					 "Key" : "Name",
-					 "Value" : "Slave WAF",
-					 "PropagateAtLaunch" : "true"
-				 } ],
-                "Cooldown"				  : "600",
-                "HealthCheckGracePeriod"  : 120,
-                "HealthCheckType"         : "EC2",
-                "LaunchConfigurationName" : { "Ref" : "LaunchConfig" },
-                "MaxSize"                 : "3",
-                "MinSize"                 : "0",
-				"DesiredCapacity"		  : { "Ref" : "numberOFSlaveWAFs" }
             }
         }
 	},

@@ -44,8 +44,8 @@ OS_SELFIP_DESCRIPTION="auto-added by blackbox-init"
 OS_PROVISION_FILE="/tmp/blackbox-provision"
 
 # CMI group add settings
-CMI_RETRIES=60
-CMI_RETRY_INTERVAL=30
+CMI_RETRIES=180
+CMI_RETRY_INTERVAL=10
 
 # Regular expressions
 LEVEL_REGEX='^(dedicated|minimum|nominal|none)$'
@@ -605,7 +605,7 @@ function cmi_configuration() {
                # we don't have the Sync device group; configure one to include the local device
                log "Sync device group not found, let's create it."
                # create the device group
-               device_group_cmd="tmsh create cm device-group Sync devices add { $hostname } type sync-failover network-failover disabled auto-sync enabled save-on-auto-sync true asm-sync enabled"
+               device_group_cmd="tmsh create cm device-group Sync devices add { $hostname } type sync-failover network-failover disabled auto-sync enabled asm-sync enabled"
                log "  $device_group_cmd"
                eval "$device_group_cmd 2>&1 | $LOGGER_CMD"             
           else
@@ -677,42 +677,29 @@ function cmi_configuration() {
                                                                     
                     # continue after both WAFs have synchronized
                     log "Synchronizing..." 
-                    
-                    curl -sk -u $master_user:$master_password -X POST -H "Content-Type: application/json" https://$master_ip/mgmt/tm/cm -d '{ "command":"run","utilCmdArgs":"config-sync to-group Sync" }'
-                    sleep $CMI_RETRY_INTERVAL
-                    
-                    set_sync_cmd="tmsh modify cm device-group datasync-global-dg devices modify { $slave_hostname { set-sync-leader } }"
-                    log "  $set_sync_cmd"
-                    eval "$set_sync_cmd 2>&1 | $LOGGER_CMD"
-                    
-                    # uncomment the following command on 12.1 and later deployments
-                    # curl -sk -u $master_user:$master_password -X POST -H "Content-Type: application/json" https://$master_ip/mgmt/tm/cm -d '{ "command":"run","utilCmdArgs":"config-sync force-full-load-push to-group datasync-global-dg" }'
-                    
-                    sleep $CMI_RETRY_INTERVAL
-                    
-                    # check that the Sync device group is synchronized
+                    # check that the Sync device group is synchronized locally
                     failed=0
                     until [[ "$(curl -sk -u $slave_user:$slave_password -X GET -H "Content-type: application/json" https://localhost/mgmt/tm/cm/sync-status/ | grep -o "Sync (In Sync): All devices in the device group are in sync")" ]] || [[ $failed -eq $CMI_RETRIES ]]; do
                          failed=$(($failed + 1))
-                         
+                         # sync the master to the Sync device group
                          curl -sk -u $master_user:$master_password -X POST -H "Content-Type: application/json" https://$master_ip/mgmt/tm/cm -d '{ "command":"run","utilCmdArgs":"config-sync to-group Sync" }'
-                         sleep $CMI_RETRY_INTERVAL
                          
-                         set_sync_cmd="tmsh modify cm device-group datasync-global-dg devices modify { $slave_hostname { set-sync-leader } }"
+                         # sync the master to the datasync-global-dg device group                  
+                         # use set sync leader to force a one-time push sync from master device to group                         
+                         set_sync_cmd="tmsh modify cm device-group datasync-global-dg devices modify { $master_hostname { set-sync-leader } }"
                          log "  $set_sync_cmd"
                          eval "$set_sync_cmd 2>&1 | $LOGGER_CMD"
                          
                          # uncomment the following command on 12.1 and later deployments
                          # curl -sk -u $master_user:$master_password -X POST -H "Content-Type: application/json" https://$master_ip/mgmt/tm/cm -d '{ "command":"run","utilCmdArgs":"config-sync force-full-load-push to-group datasync-global-dg" }'
-                         
+                                     
+                         log "Not in sync yet after $failed tries, retrying in $CMI_RETRY_INTERVAL seconds..."                              
                          sleep $CMI_RETRY_INTERVAL
-                         
-                         log "Not in sync yet after $failed tries, retrying..."                              
                     done
                     
                     if [[ $failed -ge $CMI_RETRIES ]]; then
-                         log "Could not synchronize the device group after 60 minutes, quitting..."
-                         set_status "Failure: Could not synchronize the device group after 60 minutes."
+                         log "Could not synchronize the device group after $failed attempts, quitting..."
+                         set_status "Failure: Could not synchronize the device group after $failed attempts"
                          exit
                     fi
                     
@@ -738,8 +725,6 @@ function datagroup_configuration() {
      appsvc_data_group=`tmsh list ltm data-group internal appsvc_datagroup`
      # this data group controls overwrite of the ASM policy
      appstatus_data_group=`tmsh list ltm data-group internal appstatus_datagroup`
-     # this data group maps application virtual server ports to pool members for enhanced ASM logging
-     appmap_data_group=`tmsh list ltm data-group internal appmap_datagroup`
      
      # Check to see if we are master
      if [[ $master == "true" ]]; then
@@ -752,14 +737,6 @@ function datagroup_configuration() {
                applianceid_data_group_cmd="tmsh modify ltm data-group internal /Common/applianceid_datagroup records modify { $address { data $applianceid }  }"
           fi
           
-           if [[ -z $appmap_data_group ]]; then
-               # create the empty data group
-               appmap_data_group_cmd="tmsh create ltm data-group internal /Common/appmap_datagroup type string"
-               eval "$appmap_data_group_cmd 2>&1 | $LOGGER_CMD"
-          else 
-               log "App map data group already exists."
-          fi
-          
           if [[ -z $appsvc_data_group ]]; then
                # create the data group and add master
                appsvc_data_group_cmd="tmsh create ltm data-group internal /Common/appsvc_datagroup type string"
@@ -767,7 +744,7 @@ function datagroup_configuration() {
           else 
                log "App service data group already exists."
           fi
-                    
+          
           if [[ -z $appstatus_data_group ]]; then
                # create the data group and set status to 1
                appstatus_data_group_cmd="tmsh create ltm data-group internal /Common/appstatus_datagroup type string records add { status { data 1 } }"
@@ -1013,9 +990,9 @@ function main() {
       if [[ $master == "true" ]]; then
            set_status "In Progress: Configuring Applications"     
            iapp_configuration           
-           set_status "In Progress: Configuring Applications - OK"        
-      else            
-           log "We are a slave, nothing left to do."
+           set_status "In Progress: Configuring Applications - OK"
+      else 
+          log "We are a slave, nothing left to do."
       fi
       
       sleep 10      

@@ -124,17 +124,17 @@
             ],
             "ConstraintDescription" : "must be a valid Big-IP EC2 instance type."
         },
-        "numberOFWAFs"      : {
-            "Description" : "The number of Web Applicatin Firewall's (Up to 4) that will be deployed infront of your application.",
+        "numberOFSlaveWAFs"      : {
+            "Description" : "The number of Slave Web Applicatin Firewall's (Up to 3) that will be deployed infront of your application, not counting the master.",
             "Type"        : "String",
-            "Default"     : "2",
+            "Default"     : "1",
             "AllowedValues" : [
+                "0",
                 "1",
                 "2",
-                "3",
-                "4"
+                "3"
             ],
-            "ConstraintDescription" : "Must be a valid number between 1 and 4."
+            "ConstraintDescription" : "Must be a valid number between 0 and 3."
         },
         "applicationName"   : {
             "Description" : "Please provide a simple name for your application.",
@@ -212,6 +212,11 @@
         "Subnet1"                : {
             "Description" : "ID of the existing subnet that the application servers are installed on.",
             "Type"        : "AWS::EC2::Subnet::Id"
+        },
+		"MasterTemplateURL"       : {
+            "Description" : "The S3 path to the master_waf.template file.",
+            "Type"        : "String",
+            "Default"     : ""
         },
 		"slaveTemplateURL"       : {
             "Description" : "The S3 path to the slave_wafs.template file.",
@@ -309,179 +314,18 @@
                 }
             }
         },
-        "BIGIPInstance"         : {
-            "Type" : "AWS::EC2::Instance",
-			"DependsOn" : "ExternalInterface",
-            "Metadata" : {
-                "AWS::CloudFormation::Init" : {
-                    "config" : {
-                        "files" : {
-                            "/config/azuresecurity.sh" : {
-                                "source" : "https://raw.githubusercontent.com/tstanley93/AWS-WAF/master/AWS-WAF/azuresecurity.sh",
-                                "mode"   : "000755",
-                                "owner"  : "root",
-                                "group"  : "root"
-                            },
-                            "/config/start.sh"         : {
-                                "source" : "https://raw.githubusercontent.com/tstanley93/AWS-WAF/master/AWS-WAF/start.sh",
-                                "mode"   : "000755",
-                                "owner"  : "root",
-                                "group"  : "root"
-                            }
-                        },
-                        "commands" : {
-                            "start" : {
-                                "command" : {
-                                    "Fn::Join" : [
-                                        "",
-                                        [
-                                            "/bin/bash /config/start.sh 'true;",
-                                            {
-                                                "Ref" : "applicationName"
-                                            },
-                                            "WAF0;",
-                                            {
-                                                "Fn::GetAtt" : [
-                                                    "ExternalInterface",
-                                                    "PrimaryPrivateIpAddress"
-                                                ]
-                                            },
-                                            ";",
-                                            {
-                                                "Ref" : "adminPassword"
-                                            },
-                                            ";",
-                                            {
-                                                "Ref" : "licenseToken1"
-                                            },
-                                            ";",
-                                            {
-                                                "Ref" : "applicationName"
-                                            },
-                                            "' '80;443' '",
-                                            {
-                                                "Ref" : "applicationProtocols"
-                                            },
-                                            "' '",
-                                            {
-                                                "Ref" : "applicationAddress"
-                                            },
-                                            ";aws' '",
-                                            {
-                                                "Ref" : "applicationPorts"
-                                            },
-                                            "' '",
-                                            {
-                                                "Ref" : "applicationType"
-                                            },
-                                            ";",
-                                            {
-                                                "Ref" : "blockingLevel"
-                                            },
-                                            ";",
-                                            {
-                                                "Ref" : "applicationFQDN"
-                                            },
-                                            ";",
-                                            {
-                                                "Ref" : "applicationCertificate"
-                                            },
-                                            ";",
-                                            {
-                                                "Ref" : "applicationKey"
-                                            },
-                                            ";",
-                                            {
-                                                "Ref" : "applicationChain"
-                                            },
-                                            "'\n"
-                                        ]
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "Properties" : {
-                "ImageId" : {
-                    "Fn::FindInMap" : [
-                        "BigIPRegionMap",
-                        {
-                            "Ref" : "AWS::Region"
-                        },
-                        "Best"
-                    ]
-                },
-                "InstanceType" : {
-                    "Ref" : "BigIPInstanceType"
-                },
-                "KeyName"      : {
-                    "Ref" : "KeyName"
-                },
-                "Tags"         : [
-                    {
-                        "Key" : "Name",
-                        "Value" : "F5-WAF-01"
-                    }
-                ],
-                "NetworkInterfaces" : [
-                    {
-                        "Description" : "F5 WAF Network Interface",
-                        "DeviceIndex" : "0",
-                        "NetworkInterfaceId" : {
-                            "Ref" : "ExternalInterface"
-                        }
-                    }
-                ],
-                "UserData"          : {
-                    "Fn::Base64" : {
-                        "Fn::Join" : [
-                            "",
-                            [
-                                "#!/bin/bash\n",
-                                "/opt/aws/apitools/cfn-init-1.4-0.amzn1/bin/cfn-init -v -s ",
-                                {
-                                    "Ref" : "AWS::StackId"
-                                },
-                                " -r BIGIPInstance --region ",
-                                {
-                                    "Ref" : "AWS::Region"
-                                },
-                                "\n"
-                            ]
-                        ]
-                    }
-                }
-            }
-        },
-		"SlaveWAFs" : {
+		"MasterWAF" : {
 			"Type" : "AWS::CloudFormation::Stack",
-			"DependsOn" : "BIGIPInstance",
+			"DependsOn" : "ExternalInterface" ,
 			"Properties" : {
-				"TemplateURL" : {
-                    "Fn::Base64" : {
-                        "Fn::Join" : [
-                            "",
-                            [
-                                {
-									"Ref" : "slaveTemplateURL"
-								},
-								"/slave_wafs.template"
-                            ]
-                        ]
-                    }
-                },
+				"TemplateURL" : { "Ref" : "MasterTemplateURL" },
 				"TimeoutInMinutes" : "60",
 				"Parameters" : {
 					"KeyName" : { "Ref" : "KeyName" },
 					"SSHLocation" : { "Ref" : "SSHLocation" },
 					"adminPassword" : { "Ref" : "adminPassword" },
-					"licenseToken2" : { "Ref" : "licenseToken2" },
-					"licenseToken3" : { "Ref" : "licenseToken3" },
-					"licenseToken4" : { "Ref" : "licenseToken4" },
+					"licenseToken1" : { "Ref" : "licenseToken1" },
 					"BigIPInstanceType" : { "Ref" : "BigIPInstanceType" },
-					"numberOFWAFs" : { "Ref" : "numberOFWAFs" },
 					"applicationName" : { "Ref" : "applicationName" },
 					"applicationProtocols" : { "Ref" : "applicationProtocols" },
 					"applicationAddress" : { "Ref" : "applicationAddress" },
@@ -492,7 +336,50 @@
 					"applicationCertificate" : { "Ref" : "applicationCertificate" },
 					"applicationKey" : { "Ref" : "applicationKey" },
 					"applicationChain" : { "Ref" : "applicationChain" },
-					"VpcId" : { "Ref" : "VpcId" },
+					"masterWAFAddress" : {
+						"Fn::GetAtt" : [
+                            "ExternalInterface",
+                            "PrimaryPrivateIpAddress"
+                        ]
+					},
+					"masterWAFImageID" : {
+						"Fn::FindInMap" : [
+							"BigIPRegionMap",
+							{
+								"Ref" : "AWS::Region"
+							},
+							"Best"
+						]
+					},
+					"ExternalInterface" : { "Ref" : "ExternalInterface" }
+				}
+			}
+		},
+		"SlaveWAFs" : {
+			"Type" : "AWS::CloudFormation::Stack",
+			"DependsOn" : "MasterWAF",
+			"Properties" : {
+				"TemplateURL" : { "Ref" : "slaveTemplateURL" },
+				"TimeoutInMinutes" : "60",
+				"Parameters" : {
+					"KeyName" : { "Ref" : "KeyName" },
+					"SSHLocation" : { "Ref" : "SSHLocation" },
+					"adminPassword" : { "Ref" : "adminPassword" },
+					"licenseToken2" : { "Ref" : "licenseToken2" },
+					"licenseToken3" : { "Ref" : "licenseToken3" },
+					"licenseToken4" : { "Ref" : "licenseToken4" },
+					"BigIPInstanceType" : { "Ref" : "BigIPInstanceType" },
+					"numberOFWAFs" : { "Ref" : "numberOFSlaveWAFs" },
+					"applicationName" : { "Ref" : "applicationName" },
+					"applicationProtocols" : { "Ref" : "applicationProtocols" },
+					"applicationAddress" : { "Ref" : "applicationAddress" },
+					"applicationPorts" : { "Ref" : "applicationPorts" },
+					"applicationType" : { "Ref" : "applicationType" },
+					"blockingLevel" : { "Ref" : "blockingLevel" },
+					"applicationFQDN" : { "Ref" : "applicationFQDN" },
+					"applicationCertificate" : { "Ref" : "applicationCertificate" },
+					"applicationKey" : { "Ref" : "applicationKey" },
+					"applicationChain" : { "Ref" : "applicationChain" },
 					"Subnet1" : { "Ref" : "Subnet1" },
 					"masterWAFAddress" : {
 						"Fn::GetAtt" : [

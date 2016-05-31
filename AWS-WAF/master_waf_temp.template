@@ -1,0 +1,160 @@
+{
+	"AWSTemplateFormatVersion" : "2010-09-09",
+
+	"Description" : "",
+
+	"Parameters" : {
+	},
+
+	"Resources" : {
+		"BIGIPInstance"         : {
+            "Type" : "AWS::EC2::Instance",
+			"DependsOn" : "ExternalInterface",
+            "Metadata" : {
+                "AWS::CloudFormation::Init" : {
+                    "config" : {
+                        "files" : {
+                            "/config/azuresecurity.sh" : {
+                                "source" : "https://raw.githubusercontent.com/tstanley93/AWS-WAF/master/AWS-WAF/azuresecurity.sh",
+                                "mode"   : "000755",
+                                "owner"  : "root",
+                                "group"  : "root"
+                            },
+                            "/config/start.sh"         : {
+                                "source" : "https://raw.githubusercontent.com/tstanley93/AWS-WAF/master/AWS-WAF/start.sh",
+                                "mode"   : "000755",
+                                "owner"  : "root",
+                                "group"  : "root"
+                            }
+                        },
+                        "commands" : {
+                            "start" : {
+                                "command" : {
+                                    "Fn::Join" : [
+                                        "",
+                                        [
+                                            "/bin/bash /config/start.sh 'true;",
+                                            {
+                                                "Ref" : "applicationName"
+                                            },
+                                            "WAF0;",
+                                            {
+                                                "Fn::GetAtt" : [
+                                                    "ExternalInterface",
+                                                    "PrimaryPrivateIpAddress"
+                                                ]
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "adminPassword"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "licenseToken1"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "applicationName"
+                                            },
+                                            "' '80;443' '",
+                                            {
+                                                "Ref" : "applicationProtocols"
+                                            },
+                                            "' '",
+                                            {
+                                                "Ref" : "applicationAddress"
+                                            },
+                                            ";aws' '",
+                                            {
+                                                "Ref" : "applicationPorts"
+                                            },
+                                            "' '",
+                                            {
+                                                "Ref" : "applicationType"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "blockingLevel"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "applicationFQDN"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "applicationCertificate"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "applicationKey"
+                                            },
+                                            ";",
+                                            {
+                                                "Ref" : "applicationChain"
+                                            },
+                                            "'\n"
+                                        ]
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "Properties" : {
+                "ImageId" : {
+                    "Fn::FindInMap" : [
+                        "BigIPRegionMap",
+                        {
+                            "Ref" : "AWS::Region"
+                        },
+                        "Best"
+                    ]
+                },
+                "InstanceType" : {
+                    "Ref" : "BigIPInstanceType"
+                },
+                "KeyName"      : {
+                    "Ref" : "KeyName"
+                },
+                "Tags"         : [
+                    {
+                        "Key" : "Name",
+                        "Value" : "F5-WAF-01"
+                    }
+                ],
+                "NetworkInterfaces" : [
+                    {
+                        "Description" : "F5 WAF Network Interface",
+                        "DeviceIndex" : "0",
+                        "NetworkInterfaceId" : {
+                            "Ref" : "ExternalInterface"
+                        }
+                    }
+                ],
+                "UserData"          : {
+                    "Fn::Base64" : {
+                        "Fn::Join" : [
+                            "",
+                            [
+                                "#!/bin/bash\n",
+                                "/opt/aws/apitools/cfn-init-1.4-0.amzn1/bin/cfn-init -v -s ",
+                                {
+                                    "Ref" : "AWS::StackId"
+                                },
+                                " -r BIGIPInstance --region ",
+                                {
+                                    "Ref" : "AWS::Region"
+                                },
+                                "\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+	},
+
+	"Outputs" : {
+	}
+}
