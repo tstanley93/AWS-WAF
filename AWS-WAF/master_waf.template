@@ -269,10 +269,10 @@
 		},
 		"Wait"					: {
 			"Type" : "AWS::CloudFormation::WaitCondition",
-			"DependsOn" : { "Ref" : "BigIPInstanceType" },
+			"DependsOn" : "BIGIPInstance",
 			"Properties" : {
 				"Handle" : { "Ref" : "MasterWaitHandle" },
-				"Timeout" : "1200"
+				"Timeout" : "3600"
 			}
 		}
 	},
