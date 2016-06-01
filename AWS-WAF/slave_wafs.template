@@ -169,24 +169,6 @@
                                 "mode"   : "000755",
                                 "owner"  : "root",
                                 "group"  : "root"
-                            },
-							"/config/ssl/cert.crt"         : {
-                                "source" : { "Ref" : "applicationCertificate" },
-                                "mode"   : "000755",
-                                "owner"  : "root",
-                                "group"  : "root"
-                            },
-							"/config/ssl/key.key"         : {
-                                "source" : { "Ref" : "applicationKey" },
-                                "mode"   : "000755",
-                                "owner"  : "root",
-                                "group"  : "root"
-                            },
-							"/config/ssl/chain.crt"         : {
-                                "source" : { "Ref" : "applicationChain" },
-                                "mode"   : "000755",
-                                "owner"  : "root",
-                                "group"  : "root"
                             }
                         },
                         "commands" : {
@@ -283,7 +265,8 @@
                                 {
                                     "Ref" : "AWS::Region"
                                 },
-                                "\n"
+                                "\n",
+								"cfn-signal.exe -e 0 ", { "Fn::Base64" : { "Ref" : "SlaveWaitHandle" }}, "\n"
                             ]
                         ]
                     }
@@ -311,7 +294,18 @@
                 "MinSize"                 : "0",
 				"DesiredCapacity"		  : { "Ref" : "numberOFSlaveWAFs" }
             }
-        }
+        },
+		"SlaveWaitHandle" : {
+			"Type" : "AWS::CloudFormation::WaitConditionHandle"
+		},
+		"Wait"					: {
+			"Type" : "AWS::CloudFormation::WaitCondition",
+			"DependsOn" : "SlaveWAFAutoScaleGroup",
+			"Properties" : {
+				"Handle" : { "Ref" : "SlaveWaitHandle" },
+				"Timeout" : "1200"
+			}
+		}
 	},
 
 	"Outputs" : {

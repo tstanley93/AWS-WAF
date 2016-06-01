@@ -256,13 +256,25 @@
                                 {
                                     "Ref" : "AWS::Region"
                                 },
-                                "\n"
+                                "\n",
+								"cfn-signal.exe -e 0 ", { "Fn::Base64" : { "Ref" : "MasterWaitHandle" }}, "\n"
                             ]
                         ]
                     }
                 }
             }
-        }
+        },
+		"MasterWaitHandle" : {
+			"Type" : "AWS::CloudFormation::WaitConditionHandle"
+		},
+		"Wait"					: {
+			"Type" : "AWS::CloudFormation::WaitCondition",
+			"DependsOn" : { "Ref" : "BigIPInstanceType" },
+			"Properties" : {
+				"Handle" : { "Ref" : "MasterWaitHandle" },
+				"Timeout" : "1200"
+			}
+		}
 	},
 
 	"Outputs" : {
