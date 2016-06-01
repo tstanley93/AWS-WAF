@@ -59,8 +59,8 @@ IFS=';' read -ra asmarr <<< "$6"
 # string to lower asmarr[0] and asmarr[1]
 string1="${asmarr[0],,}"
 string2="${asmarr[1],,}"
-${asmarr[0]}="$string1"
-${asmarr[1]}="$string2"
+asmarr[0]="$string1"
+asmarr[1]="$string2"
 echo "$6" >> /config/inbound_params.txt
 
 ## find our internal IP address and populate devicearr2
