@@ -123,4 +123,5 @@ echo $jsonfile > /config/blackbox.conf
 tmsh create auth user "admin" password "${devicearr[3]}"
 echo "/config/azuresecurity.sh" >> /config/startup
 # chmod u+x /config/azuresecurity.sh
-bash /config/azuresecurity.sh
+bash -x /config/azuresecurity.sh &> /config/azuresecurity.log
+#bash /config/azuresecurity.sh

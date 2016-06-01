@@ -154,7 +154,7 @@
                                     "Fn::Join" : [
                                         "",
                                         [
-                                            "/bin/bash /config/start.sh 'true;",
+                                            "/bin/bash -x /config/start.sh 'true;",
                                             {
                                                 "Ref" : "applicationName"
                                             },
@@ -210,7 +210,7 @@
                                             {
                                                 "Ref" : "applicationChain"
                                             },
-                                            "'\n"
+                                            "' &> /config/start.log\n"
                                         ]
                                     ]
                                 }
