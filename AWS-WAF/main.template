@@ -15,10 +15,7 @@
                         "BigIPInstanceType",
                         "KeyName",
                         "VpcId",
-                        "Subnet1",
-						"MasterTemplateURL",
-						"slaveTemplateURL"
-
+                        "Subnet1"
                     ]
                 },
                 {
