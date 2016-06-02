@@ -32,16 +32,7 @@
     <Content Include="azuresecurity.sh">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="BigIPBYOLCFT.template">
-      <SubType>Content</SubType>
-    </Content>
-    <Content Include="BigIPBYOLCFT_v2.template">
-      <SubType>Content</SubType>
-    </Content>
-    <Content Include="BYOLamiWebServerOnlyAutoScale.template">
-      <SubType>Content</SubType>
-    </Content>
-    <Content Include="BYOLamiWebServerOnlyAutoScale_v2.template">
+    <Content Include="README.md">
       <SubType>Content</SubType>
     </Content>
     <Content Include="start.sh">
