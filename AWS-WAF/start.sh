@@ -44,6 +44,11 @@
 ## asmarr=4 #secure string of SSL key file path
 ## asmarr=5 #secure string of SSL chain file path
 
+## Preset Variables
+OS_USER_DATA_RETRIES=20
+OS_USER_DATA_RETRY_INTERVAL=10
+OS_USER_DATA_RETRY_MAX_TIME=300
+
 ## Build the arrays based on the semicolon delimited command line argument passed from json template, and save them to a file.
 IFS=';' read -ra devicearr <<< "$1"
 echo "$1" >> /config/inbound_params.txt
@@ -78,9 +83,10 @@ then
 	certlength=${#certpatharr[@]}
 	certlastposition=$((certlength - 1))
 	certfilename=${certpatharr[${certlastposition}]}
-	curl -kO ${asmarr[3]}	
+	#curl -kO ${asmarr[3]}	
+	curl -k -s -f --retry $OS_USER_DATA_RETRIES --retry-delay $OS_USER_DATA_RETRY_INTERVAL --retry-max-time $OS_USER_DATA_RETRY_MAX_TIME -o "/config/ssl/$certfilename" "$certpath"
 	certpath="file::/config/ssl/$certfilename"
-	mv /config/"$certfilename" /config/ssl/"$certfilename"
+	#mv /config/"$certfilename" /config/ssl/"$certfilename"
 fi
 
 ## Get key file if it was supplied.
@@ -91,9 +97,10 @@ then
 	keylength=${#keypatharr[@]}
 	keylastposition=$((keylength - 1))
 	keyfilename=${keypatharr[${keylastposition}]}
-	curl -kO ${asmarr[4]}
+	#curl -kO ${asmarr[4]}
+	curl -k -s -f --retry $OS_USER_DATA_RETRIES --retry-delay $OS_USER_DATA_RETRY_INTERVAL --retry-max-time $OS_USER_DATA_RETRY_MAX_TIME -o "/config/ssl/$keyfilename" "$keypath"
 	keypath="file::/config/ssl/$keyfilename"
-	mv /config/"$keyfilename" /config/ssl/"$keyfilename"
+	#mv /config/"$keyfilename" /config/ssl/"$keyfilename"
 fi
 
 ## Get chain file if it was supplied.
@@ -104,9 +111,10 @@ then
 	chainlength=${#chainpatharr[@]}
 	chainlastposition=$((chainlength - 1))
 	chainfilename=${chainpatharr[${chainlastposition}]}
-	curl -kO ${asmarr[5]}
+	#curl -kO ${asmarr[5]}
+	curl -k -s -f --retry $OS_USER_DATA_RETRIES --retry-delay $OS_USER_DATA_RETRY_INTERVAL --retry-max-time $OS_USER_DATA_RETRY_MAX_TIME -o "/config/ssl/$chainfilename" "$chainpath"
 	chainpath="file::/config/ssl/$chainfilename"
-	mv /config/"$chainfilename" /config/ssl/"$chainfilename"
+	#mv /config/"$chainfilename" /config/ssl/"$chainfilename"
 fi
 
 
@@ -123,7 +131,7 @@ echo $jsonfile > /config/blackbox.conf
 ## Move the files and run them.
 # mv ./azuresecurity.sh /config/azuresecurity.sh
 # chmod +w /config/startup
-tmsh create auth user "admin" password "${devicearr[3]}"
+#tmsh create auth user "admin" password "${devicearr[3]}"
 echo "bash -x /config/azuresecurity.sh &> /config/azuresecurity2.log" >> /config/startup
 # chmod u+x /config/azuresecurity.sh
 bash -x /config/azuresecurity.sh &> /config/azuresecurity.log
