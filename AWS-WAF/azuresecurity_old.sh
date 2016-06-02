@@ -902,7 +902,7 @@ iapp_configuration() {
                          fi
                          
                          # run the iApp command
-                         tmsh -c "$command" > $OS_USER_DATA_STATUS_PATH 2>&1
+                         tmsh -c "$command"
                          iapp_status=$(cat $OS_USER_DATA_STATUS_PATH)
                          # check that the application service we just deployed is present; if not, report failure
                          if [[ -z $(get_application_service ${deployment}) ]]; then
@@ -1029,7 +1029,7 @@ function main() {
   set_status "Shredding ${currentscript}" 
   shred -u -z ${currentscript}
 
-    # shredding start.sh, start.log, azuresecurity.log, and azuresecurity2.log
+  # shredding start.sh, start.log, azuresecurity.log, and azuresecurity2.log
   shred -u -z "/config/start.sh"
   shred -u -z "/config/start.log"
   shred -u -z "/config/azuresecurity.log"

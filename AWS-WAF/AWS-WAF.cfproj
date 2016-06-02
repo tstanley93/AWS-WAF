@@ -32,6 +32,9 @@
     <Content Include="azuresecurity.sh">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="azuresecurity_old.sh">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="README.md">
       <SubType>Content</SubType>
     </Content>
