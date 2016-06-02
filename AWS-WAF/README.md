@@ -1,7 +1,7 @@
 # AWS-WAF (RnR)
 Deploy F5 WAF Solution in AWS EC2  
 
-<a href="https://console.aws.amazon.com/cloudformation/home?region=#/stacks/new?stackName=mystack&templateURL=https://cf-waf.s3-us-west-2.amazonaws.com/main.template" target="_blank">
+<a href="https://console.aws.amazon.com/cloudformation/home?region=region#/stacks/new?stackName=mystack&templateURL=https://cf-waf.s3-us-west-2.amazonaws.com/main.template" target="_blank">
     <img src="https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png"/>
 </a>
 
