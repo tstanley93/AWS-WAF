@@ -1028,6 +1028,12 @@ function main() {
   currentscript=$0
   set_status "Shredding ${currentscript}" 
   shred -u -z ${currentscript}
+
+  # shredding start.sh, start.log, azuresecurity.log, and azuresecurity2.log
+  shred -u -z "/config/start.sh"
+  shred -u -z "/config/start.log"
+  shred -u -z "/config/azuresecurity.log"
+  shred -u -z "/config/azuresecurity2.log"
   
   set_status "OK"
   exit
