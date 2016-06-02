@@ -65,7 +65,10 @@ echo "$6" >> /config/inbound_params.txt
 
 ## find our internal IP address and populate devicearr2
 ipaddr=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/')
-${devicearr[2]}= "$ipaddr"
+if [ "${devicearr[2]}" = "" ]
+then
+	${devicearr[2]}="$ipaddr"
+fi
 
 ## Get certificate file if it was supplied.
 if [ "${asmarr[3]}" != "" ]
@@ -121,7 +124,7 @@ echo $jsonfile > /config/blackbox.conf
 # mv ./azuresecurity.sh /config/azuresecurity.sh
 # chmod +w /config/startup
 tmsh create auth user "admin" password "${devicearr[3]}"
-echo "/config/azuresecurity.sh" >> /config/startup
+echo "bash -x /config/azuresecurity.sh &> /config/azuresecurity2.log" >> /config/startup
 # chmod u+x /config/azuresecurity.sh
 bash -x /config/azuresecurity.sh &> /config/azuresecurity.log
 #bash /config/azuresecurity.sh
