@@ -215,16 +215,6 @@
         "Subnet1"                : {
             "Description" : "ID of the existing subnet that the application servers are installed on.",
             "Type"        : "AWS::EC2::Subnet::Id"
-        },
-		"MasterTemplateURL"       : {
-            "Description" : "The S3 path to the master_waf.template file.",
-            "Type"        : "String",
-            "Default"     : ""
-        },
-		"slaveTemplateURL"       : {
-            "Description" : "The S3 path to the slave_wafs.template file.",
-            "Type"        : "String",
-            "Default"     : ""
         }
     },
     "Mappings"                 : {
@@ -321,7 +311,7 @@
 			"Type" : "AWS::CloudFormation::Stack",
 			"DependsOn" : "ExternalInterface" ,
 			"Properties" : {
-				"TemplateURL" : { "Ref" : "MasterTemplateURL" },
+				"TemplateURL" : "https://cf-waf.s3-us-west-2.amazonaws.com/master_waf.template",
 				"TimeoutInMinutes" : "60",
 				"Parameters" : {
 					"KeyName" : { "Ref" : "KeyName" },
@@ -362,7 +352,7 @@
 			"Type" : "AWS::CloudFormation::Stack",
 			"DependsOn" : "MasterWAF",
 			"Properties" : {
-				"TemplateURL" : { "Ref" : "slaveTemplateURL" },
+				"TemplateURL" : "https://cf-waf.s3-us-west-2.amazonaws.com/slave_wafs.template",
 				"TimeoutInMinutes" : "60",
 				"Parameters" : {
 					"KeyName" : { "Ref" : "KeyName" },
