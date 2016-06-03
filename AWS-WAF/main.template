@@ -304,6 +304,35 @@
                 }
             }
         },
+		"ElasticLoadBalancer" : {
+			  "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+			  "Properties" : {
+				"Instances" : [ { "Ref" : "Ec2Instance1" },{ "Ref" : "Ec2Instance2" } ],
+				"Listeners" : [ {
+				  "LoadBalancerPort" : "80",
+				  "InstancePort" : { "Ref" : "WebServerPort" },
+				  "Protocol" : "HTTP"
+				} ],
+				"HealthCheck" : {
+				  "Target" : {
+					"Fn::Join" : [ "", [ "HTTP:", { "Ref" : "WebServerPort" }, "/" ] ]
+				  },
+				  "HealthyThreshold" : "3",
+				  "UnhealthyThreshold" : "5",
+				  "Interval" : "30",
+				  "Timeout" : "5"
+				},
+				"AccessLoggingPolicy": {
+				  "S3BucketName": {
+					"Ref": "S3LoggingBucket"
+				  },
+				  "S3BucketPrefix": "MyELBLogs",
+				  "Enabled": "true",
+				  "EmitInterval" : "60"
+				},
+			  "DependsOn": "S3LoggingBucketPolicy"
+			  }
+		},
 		"MasterWAF" : {
 			"Type" : "AWS::CloudFormation::Stack",
 			"DependsOn" : "ExternalInterface" ,
