@@ -49,8 +49,8 @@
 OS_USER_DATA_RETRIES=20
 OS_USER_DATA_RETRY_INTERVAL=10
 OS_USER_DATA_RETRY_MAX_TIME=300
-STATUS_CHECK_RETRIES=60
-STATUS_CHECK_INTERVAL=20
+STATUS_CHECK_RETRIES=10
+STATUS_CHECK_INTERVAL=10
 
 ##Helper Functions
 #### check if MCP is running
@@ -164,7 +164,7 @@ echo $jsonfile > /config/blackbox.conf
 ## Move the files and run them.
 # mv ./azuresecurity.sh /config/azuresecurity.sh
 # chmod +w /config/startup
-wait_mcp_running
+(wait_mcp_running)
 if [[ $? == 0 ]]; then
 	tmsh create auth user "admin" password "${devicearr[3]}"
 else
