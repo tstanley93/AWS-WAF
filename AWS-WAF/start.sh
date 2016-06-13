@@ -50,25 +50,22 @@
 OS_USER_DATA_RETRIES=20
 OS_USER_DATA_RETRY_INTERVAL=10
 OS_USER_DATA_RETRY_MAX_TIME=300
-STATUS_CHECK_RETRIES=60
-STATUS_CHECK_INTERVAL=10
 
-##Helper Functions
+
+## Helper Functions
 #### check if MCP is running
 function wait_mcp_running() {
   failed=0
+  STATUS_CHECK_RETRIES=6
+  STATUS_CHECK_INTERVAL=10
 
   while true; do
-    mcp_started=$(bigstart_wb mcpd start)
+    # this will log an error when mcpd is not up
+    tmsh -a show sys mcp-state field-fmt | grep -q running 
 
-    if [[ $mcp_started == released ]]; then
-      # this will log an error when mcpd is not up
-      tmsh -a show sys mcp-state field-fmt | grep -q running 
-
-      if [[ $? == 0 ]]; then
-        echo "Successfully connected to mcpd..."
-        return 0
-      fi
+    if [[ $? == 0 ]]; then
+    echo "Successfully ran tmsh command..."
+    return 0
     fi
 
     failed=$(($failed + 1))
@@ -167,7 +164,7 @@ echo $jsonfile > /config/blackbox.conf
 # chmod +w /config/startup
 (wait_mcp_running)
 if [[ $? == 0 ]]; then
-	tmsh create auth user "admin" password "${devicearr[3]}"
+	tmsh modify auth user "admin" password "${devicearr[3]}"
 else
 	echo "Failed to change the admin password, the rest of the setup will fail. so exiting..."
 	exit
